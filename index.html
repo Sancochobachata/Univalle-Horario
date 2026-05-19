@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Planner - Dashboard Interactivo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg-gradient-start: #0f172a;
+  --bg-gradient-end: #1e1b4b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --glass-bg: rgba(30, 41, 59, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-blur: blur(16px);
+  --accent: #8b5cf6;
+  --accent-hover: #a78bfa;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding: 1.5rem;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 { font-family: 'Outfit', sans-serif; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+/* Glassmorphism Utilities */
+.panel-glass, .header-glass, .widget-glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+}
+
+.dashboard-container {
+  max-width: 1500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Header & Banner */
+.header-glass { padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 1.2rem; position: relative; }
+.header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; }
+.title-section h1 { font-size: 2.2rem; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+.title-section .subtitle { color: var(--text-secondary); font-size: 1.1rem; }
+
+#active-filter-banner {
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid var(--accent);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+#active-filter-banner span { font-weight: 600; color: #fff; }
+.btn-cancelar {
+  background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Inter';
+  transition: background 0.2s;
+}
+.btn-cancelar:hover { background: rgba(239, 68, 68, 0.4); }
+
+.legend { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; }
+.legend-item {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 500;
+  padding: 0.4rem 0.8rem; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+}
+.legend-color { width: 12px; height: 12px; border-radius: 50%; }
+
+/* Widgets */
+.widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.widget-glass { padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem; transition: transform 0.2s; }
+.widget-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; background: rgba(255,255,255,0.05); }
+.widget-info h3 { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+.widget-info .value { font-size: 1.6rem; font-weight: 700; color: #fff; margin-top: 0.2rem; line-height: 1.2; }
+.widget-info .sub-value { font-size: 0.8rem; color: var(--accent-hover); margin-top: 0.2rem; }
+
+/* Main Grid Layout */
+.main-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; }
+@media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
+.panel { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow: hidden; }
+.panel-full { grid-column: 1 / -1; }
+.panel-title { font-size: 1.2rem; font-weight: 600; color: #fff; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem; }
+.panel-header .panel-title { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+
+/* Charts */
+.chart-container { margin-top: 1rem; }
+.bar-group { margin-bottom: 1.2rem; }
+.bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem; font-weight: 500; }
+.bar-track { width: 100%; height: 12px; background: rgba(0,0,0,0.3); border-radius: 6px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 6px; transition: width 1s ease-out; }
+
+/* Filters */
+.filters-group { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.filter-item { display: flex; align-items: center; gap: 0.5rem; }
+.filters label { font-size: 0.85rem; color: var(--text-secondary); }
+.filters select { background: rgba(0,0,0,0.3); color: #fff; border: 1px solid var(--glass-border); padding: 0.4rem 0.8rem; border-radius: 8px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer; }
+
+/* Calendar Styling - ENHANCED FOR DOTS */
+.calendar-months { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.month-card { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 1.2rem; border: 1px solid rgba(255,255,255,0.05); }
+.month-title { text-align: center; font-size: 1.2rem; font-weight: 700; margin-bottom: 1.2rem; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+.days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+.day-header { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.day-cell {
+  aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  font-size: 0.85rem; font-weight: 600; padding-top: 4px; border-radius: 8px;
+  background: rgba(255,255,255,0.03); position: relative; transition: background 0.2s, transform 0.2s;
+  border: 1px solid rgba(255,255,255,0.02); min-height: 50px;
+}
+.day-cell.empty { background: transparent; border: none; }
+.dots-container { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; margin-top: 2px; }
+.dots-row-final { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+.dots-row-review { display: flex; gap: 2px; justify-content: center; flex-wrap: wrap; }
+
+.dot { border-radius: 50%; display: inline-block; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.dot:hover { transform: scale(1.3); box-shadow: 0 0 8px rgba(255,255,255,0.8); }
+.dot.selected-dot { transform: scale(1.4); box-shadow: 0 0 10px white; border: 2px solid white; z-index: 10; }
+.dot.final { width: 10px; height: 10px; box-shadow: 0 0 5px rgba(255,255,255,0.3); }
+.dot.review { width: 6px; height: 6px; background: transparent !important; border: 1.5px solid; }
+
+/* Table Styling */
+.table-container { overflow-y: auto; max-height: none; padding-right: 5px; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; }
+th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+th { font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; background: rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); }
+th:first-child { border-top-left-radius: 8px; }
+th:last-child { border-top-right-radius: 8px; }
+tbody tr { transition: background 0.2s; }
+tbody tr:hover { background: rgba(255,255,255,0.08); }
+.activity-cell { display: flex; align-items: center; gap: 0.75rem; font-weight: 500; }
+.activity-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px rgba(255,255,255,0.2); }
+.date-text { font-size: 0.9rem; color: #e2e8f0; font-weight: 500; }
+.date-time { font-size: 0.8rem; color: var(--text-secondary); display: block; margin-top: 0.2rem; }
+.badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin-top: 0.3rem; text-transform: uppercase; }
+.badge.entrega { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+.badge.repaso { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+/* Timetable Styling */
+.timetable-wrapper { overflow-x: auto; padding-bottom: 1rem; }
+.timetable-grid { display: grid; grid-template-columns: 60px repeat(7, minmax(160px, 1fr)); gap: 2px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; min-width: 1000px; }
+.tt-header { background: rgba(0,0,0,0.4); padding: 1rem; text-align: center; font-weight: 600; font-size: 0.9rem; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--glass-border); }
+.tt-time-label { text-align: right; padding-right: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); transform: translateY(-50%); position: relative; z-index: 5; }
+.tt-block {
+  border-radius: 8px; padding: 0.6rem; margin: 2px; font-size: 0.8rem; display: flex; flex-direction: column; justify-content: flex-start;
+  transition: transform 0.3s, opacity 0.3s, filter 0.3s, box-shadow 0.3s; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.15); cursor: default;
+}
+.tt-block:hover { transform: scale(1.03); box-shadow: 0 6px 16px rgba(0,0,0,0.4); z-index: 20 !important; filter: brightness(1.1); }
+.tt-block-title { font-weight: 700; margin-bottom: 0.3rem; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-size: 0.85rem; }
+.tt-block-subtitle { font-size: 0.75rem; opacity: 0.9; line-height: 1.2; font-weight: 500; color: #fff; }
+.tt-block-time { font-size: 0.7rem; opacity: 0.8; margin-top: auto; padding-top: 0.4rem; font-family: monospace; }
+.tt-block::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.25); z-index: -1; }
+.tt-grid-line { grid-column: 2 / -1; border-top: 1px dashed rgba(255,255,255,0.08); z-index: 1; }
+
+/* FAB Button */
+.fab { position: fixed; bottom: 2rem; right: 2rem; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #6d28d9); color: #fff; font-size: 2rem; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(139,92,246,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: transform 0.3s, box-shadow 0.3s; }
+.fab:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 6px 30px rgba(139,92,246,0.7); }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 2000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.3s; }
+.modal-overlay.active { display: flex; }
+.modal-box { background: linear-gradient(135deg, #1e293b, #1e1b4b); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.6); animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { opacity:0; transform: translateY(30px); } to { opacity:1; transform: translateY(0); } }
+.modal-title { font-family: 'Outfit'; font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.modal-close { background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; margin-left: auto; transition: color 0.2s; }
+.modal-close:hover { color: #ef4444; }
+.form-group { margin-bottom: 1.2rem; }
+.form-group label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem; font-weight: 500; }
+.form-group input, .form-group select { width: 100%; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: #fff; font-family: 'Inter'; font-size: 0.9rem; outline: none; transition: border 0.2s; }
+.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.btn-submit { width: 100%; padding: 0.8rem; background: linear-gradient(135deg, var(--accent), #6d28d9); color: #fff; border: none; border-radius: 10px; font-family: 'Inter'; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; transition: transform 0.2s, box-shadow 0.2s; }
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(139,92,246,0.5); }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; margin-bottom: 0.5rem; }
+.tab-btn { padding: 0.5rem 1.2rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: var(--text-secondary); font-family: 'Inter'; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.tab-btn:first-child { border-radius: 8px 0 0 8px; }
+.tab-btn:last-child { border-radius: 0 8px 8px 0; }
+.tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tab-btn .tab-count { background: rgba(255,255,255,0.2); padding: 0.1rem 0.4rem; border-radius: 10px; font-size: 0.75rem; margin-left: 0.3rem; }
+
+/* Checkbox */
+.task-check { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--text-secondary); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-right: 0.5rem; }
+.task-check:hover { border-color: var(--accent); }
+.task-check.checked { background: var(--accent); border-color: var(--accent); }
+.task-check.checked::after { content: '✓'; color: #fff; font-size: 0.7rem; font-weight: 700; }
+tr.done-row td { opacity: 0.4; text-decoration: line-through; }
+.badge.hecho { background: rgba(74,222,128,0.2); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+
+/* ========== RESPONSIVE MOBILE ========== */
+@media (max-width: 768px) {
+  body { padding: 0.8rem; font-size: 0.9rem; }
+  
+  .dashboard-container { gap: 1rem; }
+  
+  /* Header */
+  .header-glass { padding: 1rem; }
+  .header-top { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+  .title-section h1 { font-size: 1.4rem; }
+  .title-section .subtitle { font-size: 0.85rem; }
+  .legend { gap: 0.4rem; }
+  .legend-item { font-size: 0.7rem; padding: 0.3rem 0.5rem; }
+  
+  #active-filter-banner { flex-direction: column; gap: 0.5rem; text-align: center; }
+  
+  /* Widgets */
+  .widgets-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+  .widget-glass { padding: 1rem; gap: 1rem; }
+  .widget-icon { width: 40px; height: 40px; font-size: 1.2rem; }
+  .widget-info h3 { font-size: 0.75rem; }
+  .widget-info .value { font-size: 1.3rem; }
+  
+  /* Main Grid → 1 column */
+  .main-grid { grid-template-columns: 1fr !important; gap: 1rem; }
+  .panel { padding: 1rem; gap: 0.8rem; }
+  .panel-title { font-size: 1rem; }
+  
+  /* Calendar */
+  .calendar-months { grid-template-columns: 1fr; gap: 1rem; }
+  .month-card { padding: 0.8rem; }
+  .month-title { font-size: 1rem; margin-bottom: 0.8rem; }
+  .days-grid { gap: 3px; }
+  .day-cell { font-size: 0.75rem; min-height: 42px; }
+  .dot.final { width: 8px; height: 8px; }
+  .dot.review { width: 5px; height: 5px; }
+  
+  /* Table */
+  .panel-header { flex-direction: column; align-items: stretch; gap: 0.8rem; }
+  .filters-group { flex-direction: column; gap: 0.6rem; }
+  .tabs { width: 100%; }
+  .tab-btn { flex: 1; text-align: center; font-size: 0.8rem; padding: 0.5rem 0.6rem; }
+  .filter-item { width: 100%; }
+  .filter-item select { width: 100%; }
+  
+  .table-container { overflow-x: auto; }
+  table { min-width: 600px; }
+  th, td { padding: 0.6rem 0.5rem; font-size: 0.8rem; }
+  .activity-cell { gap: 0.5rem; }
+  .date-text { font-size: 0.8rem; }
+  .date-time { font-size: 0.7rem; }
+  .badge { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
+  
+  /* Timetable */
+  .timetable-grid { min-width: 800px; }
+  .tt-header { padding: 0.6rem 0.3rem; font-size: 0.75rem; }
+  .tt-block { padding: 0.4rem; }
+  .tt-block-title { font-size: 0.7rem; }
+  .tt-block-subtitle { font-size: 0.65rem; }
+  .tt-block-time { font-size: 0.6rem; }
+  
+  /* FAB */
+  .fab { width: 52px; height: 52px; font-size: 1.6rem; bottom: 1.2rem; right: 1.2rem; }
+  
+  /* Modal */
+  .modal-box { padding: 1.5rem; width: 95%; }
+  .modal-title { font-size: 1.2rem; }
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* Extra small phones */
+@media (max-width: 380px) {
+  body { padding: 0.5rem; }
+  .title-section h1 { font-size: 1.2rem; }
+  .widgets-grid { gap: 0.5rem; }
+  .day-cell { min-height: 36px; font-size: 0.7rem; }
+}
+  </style>
+</head>
+<body>
+  
+  <!-- MODAL CREAR ACTIVIDAD -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title">➕ Nueva Actividad <button class="modal-close" onclick="closeModal()">✕</button></div>
+      <form id="new-task-form" onsubmit="return handleNewTask(event)">
+        <div class="form-group">
+          <label for="m-activity">Nombre de la actividad</label>
+          <input type="text" id="m-activity" placeholder="Ej: Matemáticas — Parcial 5" required>
+        </div>
+        <div class="form-group">
+          <label for="m-subject">Asignatura</label>
+          <select id="m-subject" required></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="m-delivery-date">Fecha de entrega</label>
+            <input type="date" id="m-delivery-date" required>
+          </div>
+          <div class="form-group">
+            <label for="m-delivery-time">Hora de entrega</label>
+            <input type="time" id="m-delivery-time" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="m-review-date">Fecha de repaso</label>
+            <input type="date" id="m-review-date" required>
+          </div>
+          <div class="form-group">
+            <label for="m-review-start">Hora inicio repaso</label>
+            <input type="time" id="m-review-start" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="m-review-end">Hora fin repaso</label>
+          <input type="time" id="m-review-end" required>
+        </div>
+        <button type="submit" class="btn-submit">🚀 Crear Actividad</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" onclick="openModal()" title="Agregar actividad">+</button>
+
+  <div class="dashboard-container">
+    <header class="header-glass">
+      <div class="header-top">
+        <div class="title-section">
+          <h1>🚀 DASHBOARD DE ESTUDIO PRO</h1>
+          <p class="subtitle">Semestre 2026 — Sede Meléndez | Química</p>
+        </div>
+        <div class="legend" id="legend-container"></div>
+      </div>
+      
+      <!-- Banner Dinámico de Filtro -->
+      <div id="active-filter-banner">
+        <div>
+          <span style="font-size: 0.85rem; color: #e2e8f0; font-weight: 400; display:block;">Estás visualizando un evento específico:</span>
+          <span id="filter-text" style="font-size: 1.2rem;">Filtro</span>
+        </div>
+        <button class="btn-cancelar" onclick="clearFilter()">✕ Cancelar Filtro</button>
+      </div>
+    </header>
+
+    <!-- WIDGETS -->
+    <section class="widgets-grid">
+      <div class="widget-glass" id="widget-box-1">
+        <div class="widget-icon" id="icon-1" style="color: #60A5FA; background: rgba(96, 165, 250, 0.1);">📚</div>
+        <div class="widget-info">
+          <h3 id="title-1">Entregas Totales</h3>
+          <div class="value" id="val-1">0</div>
+          <div class="sub-value" id="sub-1">En el semestre</div>
+        </div>
+      </div>
+      <div class="widget-glass" id="widget-box-2">
+        <div class="widget-icon" id="icon-2" style="color: #F472B6; background: rgba(244, 114, 182, 0.1);">⚡</div>
+        <div class="widget-info">
+          <h3 id="title-2">Próxima Entrega</h3>
+          <div class="value" id="val-2" style="font-size: 1.1rem; line-height: 1.3;">Cargando...</div>
+          <div class="sub-value" id="sub-2"></div>
+        </div>
+      </div>
+      <div class="widget-glass" id="widget-box-3">
+        <div class="widget-icon" id="icon-3" style="color: #4ADE80; background: rgba(74, 222, 128, 0.1);">⏱️</div>
+        <div class="widget-info">
+          <h3 id="title-3">Horas de Trabajo</h3>
+          <div class="value" id="val-3">44h</div>
+          <div class="sub-value" id="sub-3">Semanales (Optimizadas)</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="main-grid">
+      <!-- CALENDARIO SEMESTRAL -->
+      <section class="panel panel-glass" id="calendar-panel">
+        <h2 class="panel-title">🗓️ Calendario Semestral Interactivo</h2>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top:-10px; margin-bottom: 10px;">Clickea las esferas para filtrar los detalles.</p>
+        <div class="calendar-months" id="calendar-months"></div>
+      </section>
+
+      <!-- TABLA DE PLAN DE DESARROLLO -->
+      <section class="panel panel-glass" id="study-plan-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">📋 Plan de Desarrollo y Estudio</h2>
+          <div class="filters-group filters" id="table-controls">
+            <div class="tabs">
+              <button class="tab-btn active" id="tab-pending" onclick="switchTab('pending')">📌 Pendientes <span class="tab-count" id="count-pending">0</span></button>
+              <button class="tab-btn" id="tab-archived" onclick="switchTab('archived')">✅ Archivadas <span class="tab-count" id="count-archived">0</span></button>
+            </div>
+            <div class="filter-item">
+              <label for="sort-filter">Ordenar por:</label>
+              <select id="sort-filter">
+                <option value="nearest">Más prontas primero</option>
+                <option value="furthest">Menos prontas primero</option>
+                <option value="alphabetical">Alfabético</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label for="subject-filter">Asignatura:</label>
+              <select id="subject-filter">
+                <option value="all">Todas</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="study-table">
+            <thead>
+              <tr>
+                <th style="width:30px;"></th>
+                <th>Actividad / Asignatura</th>
+                <th>Fecha Límite (Evento)</th>
+                <th>Desarrollo / Repaso</th>
+              </tr>
+            </thead>
+            <tbody id="study-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- HORARIO SEMANAL -->
+      <section class="panel panel-glass panel-full" id="timetable-panel">
+        <h2 class="panel-title" id="timetable-title">🕒 Horario Dinámico — Integración Trabajo y Estudio</h2>
+        <div class="timetable-wrapper">
+          <div class="timetable-grid" id="timetable-grid"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. DATOS DE LA APLICACIÓN
+    // ==========================================
+    const colors = { ingles: '#F472B6', matematicas: '#FB923C', ciencias: '#4ADE80', expTeoria: '#38BDF8', expLab: '#60A5FA', taller: '#818CF8', estadistica: '#C084FC', trabajo: '#94A3B8', transporte: '#FCD34D', repaso: '#A78BFA', libre: '#334155' };
+    const subjects = { ingles: { name: 'Inglés con Fines Generales I', color: colors.ingles }, matematicas: { name: 'Matemática Fundamental', color: colors.matematicas }, ciencias: { name: 'Ciencias Naturales', color: colors.ciencias }, expTeoria: { name: 'Exp. Científica (Teoría)', color: colors.expTeoria }, expLab: { name: 'Exp. Científica (Lab)', color: colors.expLab }, estadistica: { name: 'Estadística', color: colors.estadistica }, taller: { name: 'Taller ICN', color: colors.taller } };
+
+    const schedule = [
+      { day: 1, start: '07:00', end: '09:00', title: subjects.ingles.name, subtitle: 'E26 - 1015', color: subjects.ingles.color, type: 'class', subKey: 'ingles' },
+      { day: 1, start: '09:00', end: '10:00', title: 'Transporte', subtitle: 'Universidad → Trabajo', color: colors.transporte, type: 'commute' },
+      { day: 1, start: '10:00', end: '19:30', title: 'Trabajo (8.75h)', subtitle: 'Empieza 1h post clase', color: colors.trabajo, type: 'work' },
+      { day: 1, start: '19:30', end: '20:30', title: 'Transporte', subtitle: 'Trabajo → Casa', color: colors.transporte, type: 'commute' },
+      { day: 1, start: '20:30', end: '23:30', title: 'Repaso / Estudio', subtitle: 'Nocturno', color: colors.repaso, type: 'review' },
+      
+      { day: 2, start: '07:00', end: '09:00', title: subjects.matematicas.name, subtitle: 'E20 - AC1', color: subjects.matematicas.color, type: 'class', subKey: 'matematicas' },
+      { day: 2, start: '09:00', end: '11:00', title: subjects.ciencias.name, subtitle: 'E24 - AUD 3', color: subjects.ciencias.color, type: 'class', subKey: 'ciencias' },
+      { day: 2, start: '11:00', end: '13:00', title: subjects.expTeoria.name, subtitle: 'E24 - AUD 3', color: subjects.expTeoria.color, type: 'class', subKey: 'expTeoria' },
+      { day: 2, start: '14:00', end: '17:00', title: subjects.expLab.name, subtitle: 'S. Ciencias', color: subjects.expLab.color, type: 'class', subKey: 'expLab' },
+      { day: 2, start: '17:00', end: '19:00', title: 'Libre / Descanso', subtitle: 'Post-Laboratorio', color: colors.libre, type: 'free' },
+      { day: 2, start: '19:00', end: '23:00', title: 'Repaso / Estudio', subtitle: 'Academic Focus Day', color: colors.repaso, type: 'review' },
+      
+      { day: 3, start: '07:00', end: '09:00', title: subjects.ingles.name, subtitle: 'E26 - 2027', color: subjects.ingles.color, type: 'class', subKey: 'ingles' },
+      { day: 3, start: '11:00', end: '13:00', title: subjects.ciencias.name, subtitle: 'E26 - 1015', color: subjects.ciencias.color, type: 'class', subKey: 'ciencias' },
+      { day: 3, start: '13:00', end: '14:00', title: 'Transporte', subtitle: 'Universidad → Trabajo', color: colors.transporte, type: 'commute' },
+      { day: 3, start: '14:00', end: '21:45', title: 'Trabajo (7.0h)', subtitle: 'Free from 1PM on', color: colors.trabajo, type: 'work' },
+      { day: 3, start: '21:45', end: '22:45', title: 'Transporte', subtitle: 'Trabajo → Casa', color: colors.transporte, type: 'commute' },
+      { day: 3, start: '22:45', end: '23:45', title: 'Repaso Ligero', subtitle: '', color: colors.repaso, type: 'review' },
+      
+      { day: 4, start: '07:00', end: '09:00', title: subjects.matematicas.name, subtitle: 'E20 - AC3', color: subjects.matematicas.color, type: 'class', subKey: 'matematicas' },
+      { day: 4, start: '09:00', end: '11:00', title: subjects.ciencias.name, subtitle: 'E24 - AUD 3', color: subjects.ciencias.color, type: 'class', subKey: 'ciencias' },
+      { day: 4, start: '11:00', end: '12:00', title: 'Transporte', subtitle: 'Universidad → Trabajo', color: colors.transporte, type: 'commute' },
+      { day: 4, start: '12:00', end: '21:45', title: 'Trabajo (9.0h)', subtitle: 'Post-clases', color: colors.trabajo, type: 'work' },
+      { day: 4, start: '21:45', end: '22:45', title: 'Transporte', subtitle: 'Trabajo → Casa', color: colors.transporte, type: 'commute' },
+      { day: 4, start: '22:45', end: '23:45', title: 'Repaso / Estudio', subtitle: '', color: colors.repaso, type: 'review' },
+      
+      { day: 5, start: '05:30', end: '06:30', title: 'Transporte', subtitle: 'Casa → Trabajo', color: colors.transporte, type: 'commute' },
+      { day: 5, start: '06:30', end: '16:00', title: 'Trabajo (8.75h)', subtitle: 'Early start / No class', color: colors.trabajo, type: 'work' },
+      { day: 5, start: '16:00', end: '17:00', title: 'Transporte', subtitle: 'Trabajo → Casa', color: colors.transporte, type: 'commute' },
+      { day: 5, start: '17:00', end: '19:00', title: 'Libre / Personal', subtitle: 'Descanso de tarde', color: colors.libre, type: 'free' },
+      { day: 5, start: '19:00', end: '23:59', title: 'Repaso / Estudio', subtitle: 'Noche de viernes', color: colors.repaso, type: 'review' },
+      
+      { day: 6, start: '09:00', end: '10:00', title: 'Transporte', subtitle: 'Casa → Trabajo', color: colors.transporte, type: 'commute' },
+      { day: 6, start: '10:00', end: '21:15', title: 'Trabajo (10.5h)', subtitle: 'Sábado Full', color: colors.trabajo, type: 'work' },
+      { day: 6, start: '21:15', end: '22:15', title: 'Transporte', subtitle: 'Trabajo → Casa', color: colors.transporte, type: 'commute' },
+      { day: 6, start: '22:15', end: '23:59', title: 'Libre', subtitle: '', color: colors.libre, type: 'free' },
+      
+      { day: 0, start: '08:00', end: '14:00', title: 'Día Libre', subtitle: 'Company Policy OFF', color: colors.libre, type: 'free' },
+      { day: 0, start: '14:00', end: '22:00', title: 'Repaso / Estudio', subtitle: 'Intensivo Domingo', color: colors.repaso, type: 'review' }
+    ];
+
+    let studyPlan = [
+      { activity: 'Lab. Exp. Científica — Informe Q2', deliveryDate: '2026-05-26T23:59', reviewDate: '2026-05-17T14:00', reviewEnd: '2026-05-17T17:00', subject: 'expLab' },
+      { activity: 'Intro. Exp. Científica — Informe Lab', deliveryDate: '2026-05-26T23:59', reviewDate: '2026-05-18T22:00', reviewEnd: '2026-05-18T23:59', subject: 'expTeoria' },
+      { activity: 'Intro. Exp. Científica — Examen Unidad 2', deliveryDate: '2026-05-19T11:00', reviewDate: '2026-05-18T23:00', reviewEnd: '2026-05-18T23:59', subject: 'expTeoria' },
+      { activity: 'Taller ICN — Lectura', deliveryDate: '2026-05-20T11:00', reviewDate: '2026-05-18T23:59', reviewEnd: '2026-05-19T01:00', subject: 'taller' },
+      { activity: 'Matemáticas — Quiz 2', deliveryDate: '2026-05-21T07:00', reviewDate: '2026-05-19T19:00', reviewEnd: '2026-05-19T22:00', subject: 'matematicas' },
+      { activity: 'Matemáticas — Quiz 2', deliveryDate: '2026-05-21T07:00', reviewDate: '2026-05-20T22:00', reviewEnd: '2026-05-20T23:59', subject: 'matematicas' },
+      { activity: 'Matemáticas — Parcial 2 (Repaso fuerte)', deliveryDate: '2026-05-28T07:00', reviewDate: '2026-05-22T19:00', reviewEnd: '2026-05-22T23:59', subject: 'matematicas' },
+      { activity: 'Estadística — Tarea', deliveryDate: '2026-05-26T14:00', reviewDate: '2026-05-23T07:00', reviewEnd: '2026-05-23T10:00', subject: 'estadistica' },
+      { activity: 'Ciencias Naturales — 1er Parcial', deliveryDate: '2026-05-26T14:00', reviewDate: '2026-05-24T15:00', reviewEnd: '2026-05-24T18:00', subject: 'ciencias' },
+      { activity: 'Ciencias Naturales — 1er Parcial (Práctica)', deliveryDate: '2026-05-26T14:00', reviewDate: '2026-05-24T19:00', reviewEnd: '2026-05-24T22:00', subject: 'ciencias' },
+      { activity: 'Matemáticas — Parcial 2 (Reforzamiento)', deliveryDate: '2026-05-28T07:00', reviewDate: '2026-05-25T20:00', reviewEnd: '2026-05-25T22:00', subject: 'matematicas' },
+      { activity: 'Ciencias Naturales — 1er Parcial (Repaso fuerte)', deliveryDate: '2026-05-26T14:00', reviewDate: '2026-05-25T22:00', reviewEnd: '2026-05-25T23:59', subject: 'ciencias' },
+      { activity: 'Matemáticas — Parcial 2 (Práctica clave)', deliveryDate: '2026-05-28T07:00', reviewDate: '2026-05-26T19:00', reviewEnd: '2026-05-26T22:00', subject: 'matematicas' },
+      { activity: 'Ciencias Naturales — 1er Parcial (Repaso ligero)', deliveryDate: '2026-05-26T14:00', reviewDate: '2026-05-26T22:00', reviewEnd: '2026-05-26T23:00', subject: 'ciencias' },
+      { activity: 'Matemáticas — Parcial 2 (Repaso ligero)', deliveryDate: '2026-05-28T07:00', reviewDate: '2026-05-27T22:00', reviewEnd: '2026-05-27T23:59', subject: 'matematicas' },
+      { activity: 'Matemáticas — Quiz 3', deliveryDate: '2026-06-04T07:00', reviewDate: '2026-06-02T19:00', reviewEnd: '2026-06-02T22:00', subject: 'matematicas' },
+      { activity: 'Matemáticas — Quiz 3', deliveryDate: '2026-06-04T07:00', reviewDate: '2026-06-03T22:00', reviewEnd: '2026-06-03T23:59', subject: 'matematicas' },
+      { activity: 'Matemáticas — Parcial 3 (Repaso fuerte)', deliveryDate: '2026-06-18T07:00', reviewDate: '2026-06-12T19:00', reviewEnd: '2026-06-12T23:59', subject: 'matematicas' },
+      { activity: 'Matemáticas — Parcial 3 (Reforzamiento)', deliveryDate: '2026-06-18T07:00', reviewDate: '2026-06-15T20:00', reviewEnd: '2026-06-15T22:00', subject: 'matematicas' },
+      { activity: 'Matemáticas — Parcial 3 (Práctica clave)', deliveryDate: '2026-06-18T07:00', reviewDate: '2026-06-16T19:00', reviewEnd: '2026-06-16T22:00', subject: 'matematicas' },
+      { activity: 'Matemáticas — Parcial 3 (Repaso ligero)', deliveryDate: '2026-06-18T07:00', reviewDate: '2026-06-17T22:00', reviewEnd: '2026-06-17T23:59', subject: 'matematicas' },
+      { activity: 'Matemáticas — Quiz 4', deliveryDate: '2026-06-25T07:00', reviewDate: '2026-06-23T19:00', reviewEnd: '2026-06-23T22:00', subject: 'matematicas' },
+      { activity: 'Matemáticas — Quiz 4', deliveryDate: '2026-06-25T07:00', reviewDate: '2026-06-24T22:00', reviewEnd: '2026-06-24T23:59', subject: 'matematicas' },
+      { activity: 'Ciencias Naturales — 2do Parcial', deliveryDate: '2026-07-09T14:00', reviewDate: '2026-07-05T15:00', reviewEnd: '2026-07-05T18:00', subject: 'ciencias' },
+      { activity: 'Ciencias Naturales — 2do Parcial (Práctica)', deliveryDate: '2026-07-09T14:00', reviewDate: '2026-07-05T19:00', reviewEnd: '2026-07-05T22:00', subject: 'ciencias' },
+      { activity: 'Matemáticas — Parcial 4 (Reforzamiento)', deliveryDate: '2026-07-09T07:00', reviewDate: '2026-07-06T20:00', reviewEnd: '2026-07-06T22:00', subject: 'matematicas' },
+      { activity: 'Ciencias Naturales — 2do Parcial (Repaso fuerte)', deliveryDate: '2026-07-09T14:00', reviewDate: '2026-07-06T22:00', reviewEnd: '2026-07-06T23:59', subject: 'ciencias' },
+      { activity: 'Matemáticas — Parcial 4 (Práctica clave)', deliveryDate: '2026-07-09T07:00', reviewDate: '2026-07-07T19:00', reviewEnd: '2026-07-07T22:00', subject: 'matematicas' },
+      { activity: 'Ciencias Naturales — 2do Parcial (Repaso ligero)', deliveryDate: '2026-07-09T14:00', reviewDate: '2026-07-07T22:00', reviewEnd: '2026-07-07T23:00', subject: 'ciencias' },
+      { activity: 'Matemáticas — Parcial 4 (Repaso ligero)', deliveryDate: '2026-07-09T07:00', reviewDate: '2026-07-08T22:00', reviewEnd: '2026-07-08T23:59', subject: 'matematicas' },
+      { activity: 'Ciencias Naturales — 2do Parcial (Último vistazo)', deliveryDate: '2026-07-09T14:00', reviewDate: '2026-07-08T19:00', reviewEnd: '2026-07-08T20:30', subject: 'ciencias' },
+      { activity: 'Ciencias Naturales — Parcial Final', deliveryDate: '2026-07-19T14:00', reviewDate: '2026-07-12T15:00', reviewEnd: '2026-07-12T18:00', subject: 'ciencias' },
+      { activity: 'Ciencias Naturales — Parcial Final (Práctica)', deliveryDate: '2026-07-19T14:00', reviewDate: '2026-07-12T19:00', reviewEnd: '2026-07-12T22:00', subject: 'ciencias' },
+      { activity: 'Ciencias Naturales — Parcial Final (Repaso fuerte)', deliveryDate: '2026-07-19T14:00', reviewDate: '2026-07-13T20:00', reviewEnd: '2026-07-13T23:00', subject: 'ciencias' },
+      { activity: 'Ciencias Naturales — Parcial Final (Práctica clave)', deliveryDate: '2026-07-19T14:00', reviewDate: '2026-07-14T19:00', reviewEnd: '2026-07-14T22:00', subject: 'ciencias' },
+      { activity: 'Ciencias Naturales — Parcial Final (Repaso ligero)', deliveryDate: '2026-07-19T14:00', reviewDate: '2026-07-15T19:00', reviewEnd: '2026-07-15T20:30', subject: 'ciencias' }
+    ];
+
+    // ESTADO INTERACTIVO
+    let activeFilter = null;
+    let completedTasks = JSON.parse(localStorage.getItem('completedTasks') || '[]');
+    let currentTab = 'pending';
+
+    // MODAL
+    window.openModal = function() {
+      const sel = document.getElementById('m-subject');
+      if (sel.options.length === 0) {
+        Object.keys(subjects).forEach(k => {
+          const o = document.createElement('option');
+          o.value = k; o.textContent = subjects[k].name;
+          sel.appendChild(o);
+        });
+      }
+      document.getElementById('modal-overlay').classList.add('active');
+    };
+    window.closeModal = function() {
+      document.getElementById('modal-overlay').classList.remove('active');
+    };
+    window.handleNewTask = function(e) {
+      e.preventDefault();
+      const dd = document.getElementById('m-delivery-date').value;
+      const dt = document.getElementById('m-delivery-time').value;
+      const rd = document.getElementById('m-review-date').value;
+      const rs = document.getElementById('m-review-start').value;
+      const re = document.getElementById('m-review-end').value;
+      const newTask = {
+        activity: document.getElementById('m-activity').value,
+        subject: document.getElementById('m-subject').value,
+        deliveryDate: `${dd}T${dt}`,
+        reviewDate: `${rd}T${rs}`,
+        reviewEnd: `${rd}T${re}`
+      };
+      studyPlan.push(newTask);
+      saveCustomTasks();
+      closeModal();
+      document.getElementById('new-task-form').reset();
+      refreshAll();
+    };
+
+    function saveCustomTasks() {
+      localStorage.setItem('customTasks', JSON.stringify(studyPlan.slice(36)));
+    }
+    function loadCustomTasks() {
+      const saved = JSON.parse(localStorage.getItem('customTasks') || '[]');
+      saved.forEach(t => studyPlan.push(t));
+    }
+
+    // TABS
+    window.switchTab = function(tab) {
+      currentTab = tab;
+      document.getElementById('tab-pending').classList.toggle('active', tab === 'pending');
+      document.getElementById('tab-archived').classList.toggle('active', tab === 'archived');
+      renderStudyPlan(false);
+    };
+    function updateTabCounts() {
+      const pending = studyPlan.filter((_, i) => !completedTasks.includes(i)).length;
+      const archived = completedTasks.length;
+      document.getElementById('count-pending').textContent = pending;
+      document.getElementById('count-archived').textContent = archived;
+    }
+
+    // CHECKBOX
+    window.toggleComplete = function(idx, event) {
+      event.stopPropagation();
+      if (completedTasks.includes(idx)) {
+        completedTasks = completedTasks.filter(i => i !== idx);
+      } else {
+        completedTasks.push(idx);
+      }
+      localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+      renderStudyPlan(false);
+      renderCalendar();
+      initWidgets();
+    };
+
+    window.selectActivityByName = function(baseActivityName, event) {
+      if(event) event.stopPropagation();
+      activeFilter = { type: 'name', value: baseActivityName };
+      const plans = studyPlan.filter(p => p.activity.startsWith(baseActivityName));
+      if (plans.length > 0) applyDashboardUpdate(plans, plans[0].subject, baseActivityName);
+    };
+
+    window.selectActivityByIndex = function(index, event) {
+      if(event) event.stopPropagation();
+      activeFilter = { type: 'index', value: index };
+      const plan = studyPlan[index];
+      const baseActivity = plan.activity.split('(')[0].trim();
+      applyDashboardUpdate([plan], plan.subject, plan.activity);
+    };
+
+    function applyDashboardUpdate(plansList, subjectKey, titleStr) {
+      const banner = document.getElementById('active-filter-banner');
+      banner.style.display = 'flex';
+      document.getElementById('filter-text').innerHTML = `<span style="color:${subjects[subjectKey].color}">${titleStr}</span>`;
+      document.getElementById('table-controls').style.display = 'none';
+      document.getElementById('timetable-title').innerHTML = `🕒 Horario Dinámico — Filtrado por: <span style="color:${subjects[subjectKey].color}">${subjects[subjectKey].name}</span>`;
+
+      document.querySelectorAll('.dot').forEach(d => d.classList.remove('selected-dot'));
+      if (activeFilter.type === 'name') {
+        document.querySelectorAll(`.dot.final[data-activity="${titleStr}"]`).forEach(d => d.classList.add('selected-dot'));
+        document.querySelectorAll(`.dot.review[data-activity="${titleStr}"]`).forEach(d => d.classList.add('selected-dot'));
+      } else {
+        document.querySelectorAll(`.dot[data-index="${activeFilter.value}"]`).forEach(d => d.classList.add('selected-dot'));
+      }
+
+      const tbody = document.getElementById('study-table-body');
+      tbody.innerHTML = '';
+      drawTableRows(plansList, tbody);
+      renderTimetable(subjectKey, plansList);
+      updateWidgetsForActivities(plansList, subjectKey);
+    }
+
+    window.clearFilter = function() {
+      activeFilter = null;
+      document.getElementById('active-filter-banner').style.display = 'none';
+      document.getElementById('table-controls').style.display = 'flex';
+      document.getElementById('timetable-title').innerHTML = `🕒 Horario Dinámico — Integración Trabajo y Estudio`;
+      document.querySelectorAll('.dot').forEach(d => d.classList.remove('selected-dot'));
+      renderStudyPlan(false);
+      renderTimetable();
+      initWidgets();
+    };
+
+    function refreshAll() {
+      renderCalendar();
+      renderStudyPlan(false);
+      renderTimetable();
+      initWidgets();
+    }
+
+    // ==========================================
+    // 2. LÓGICA DE UI Y RENDERING
+    // ==========================================
+    const formatDateTime = (isoString) => {
+      if (!isoString) return { date: '', time: '' };
+      const date = new Date(isoString);
+      const optionsDate = { weekday: 'long', day: 'numeric', month: 'long' };
+      const optionsTime = { hour: '2-digit', minute: '2-digit', hour12: true };
+      const dateStr = date.toLocaleDateString('es-CO', optionsDate);
+      const timeStr = date.toLocaleTimeString('es-CO', optionsTime);
+      return { date: dateStr.charAt(0).toUpperCase() + dateStr.slice(1), time: timeStr, rawDate: date };
+    };
+
+    const getSubjectColor = (subjectKey) => colors[subjectKey] || '#ffffff';
+
+    function initWidgets() {
+      // Estado Normal
+      document.getElementById('title-1').innerText = 'Entregas Totales';
+      document.getElementById('val-1').innerText = new Set(studyPlan.map(p => p.activity)).size;
+      document.getElementById('sub-1').innerText = 'En el semestre';
+      document.getElementById('icon-1').innerHTML = '📚';
+      document.getElementById('icon-1').style.color = '#60A5FA';
+      document.getElementById('icon-1').style.background = 'rgba(96, 165, 250, 0.1)';
+
+      const now = new Date('2026-05-16T00:00:00'); // Simulated current date for demo
+      const upcoming = studyPlan.filter(p => new Date(p.deliveryDate) > now).sort((a,b) => new Date(a.deliveryDate) - new Date(b.deliveryDate));
+      if (upcoming.length > 0) {
+        document.getElementById('title-2').innerText = 'Próxima Entrega';
+        const next = upcoming[0];
+        document.getElementById('val-2').innerHTML = `<span style="color: ${getSubjectColor(next.subject)}">${next.activity}</span>`;
+        document.getElementById('val-2').style.fontSize = '1.1rem';
+        document.getElementById('sub-2').innerText = formatDateTime(next.deliveryDate).date;
+      }
+
+      document.getElementById('title-3').innerText = 'Horas de Trabajo';
+      document.getElementById('val-3').innerText = '44h';
+      document.getElementById('sub-3').innerText = 'Semanales (Optimizadas)';
+      document.getElementById('icon-3').innerHTML = '⏱️';
+    }
+
+    function updateWidgetsForActivities(plans, subjectKey) {
+      document.getElementById('title-1').innerText = 'Asignatura';
+      document.getElementById('val-1').innerText = subjects[subjectKey].name;
+      document.getElementById('val-1').style.color = subjects[subjectKey].color;
+      document.getElementById('sub-1').innerText = 'Relacionada a la selección';
+      document.getElementById('icon-1').innerHTML = '🎯';
+
+      document.getElementById('title-2').innerText = 'Fecha Límite';
+      const deliv = formatDateTime(plans[0].deliveryDate);
+      document.getElementById('val-2').innerHTML = deliv.date;
+      document.getElementById('val-2').style.fontSize = '1.2rem';
+      document.getElementById('sub-2').innerText = deliv.time;
+
+      let totalHours = 0;
+      plans.forEach(plan => {
+        const t1 = new Date(plan.reviewDate).getTime();
+        const t2 = new Date(plan.reviewEnd).getTime();
+        totalHours += ((t2 - t1) / (1000 * 60 * 60));
+      });
+      
+      document.getElementById('title-3').innerText = 'Tiempo de Repaso';
+      document.getElementById('val-3').innerText = totalHours.toFixed(1) + 'h';
+      document.getElementById('sub-3').innerText = plans.length > 1 ? 'Total para todos los repasos' : 'Programadas para esta sesión';
+      document.getElementById('icon-3').innerHTML = '⏳';
+    }
+
+    function renderLegend() {
+      const legendContainer = document.getElementById('legend-container');
+      const allItems = [
+        ...Object.values(subjects),
+        { name: 'Trabajo', color: colors.trabajo },
+        { name: 'Transporte', color: colors.transporte },
+        { name: 'Repaso Libre', color: colors.repaso }
+      ];
+
+      legendContainer.innerHTML = allItems.map(item => `
+        <div class="legend-item">
+          <span class="legend-color" style="background-color: ${item.color}"></span>
+          <span>${item.name}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderCalendar() {
+      const container = document.getElementById('calendar-months');
+      container.innerHTML = '';
+      
+      const months = [{ year: 2026, month: 4, name: 'Mayo' }, { year: 2026, month: 5, name: 'Junio' }, { year: 2026, month: 6, name: 'Julio' }];
+      const daysOfWeek = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+      
+      const eventsByDate = {};
+      const uniqueFinals = {}; 
+
+      studyPlan.forEach((plan, idx) => {
+        // Extraer el nombre base (eliminar todo lo que esté entre paréntesis)
+        const baseActivity = plan.activity.split('(')[0].trim();
+
+        // EVENTOS FINALES - Filtrados para que no haya bolas repetidas del mismo evento el mismo día
+        if (plan.deliveryDate) {
+          const d = plan.deliveryDate.split('T')[0];
+          const key = `${d}_${baseActivity}`; // Clave única por día y por EVENTO BASE
+          if (!uniqueFinals[key]) {
+            uniqueFinals[key] = { date: d, type: 'final', subject: plan.subject, activity: baseActivity, color: getSubjectColor(plan.subject) };
+          }
+        }
+        // REPASOS / DESARROLLO
+        if (plan.reviewDate) {
+          const r = plan.reviewDate.split('T')[0];
+          if (!eventsByDate[r]) eventsByDate[r] = { finals: [], reviews: [] };
+          eventsByDate[r].reviews.push({ type: 'review', subject: plan.subject, activity: baseActivity, color: getSubjectColor(plan.subject), index: idx });
+        }
+      });
+
+      // Insertar eventos finales únicos a los días
+      Object.values(uniqueFinals).forEach(ev => {
+        if (!eventsByDate[ev.date]) eventsByDate[ev.date] = { finals: [], reviews: [] };
+        eventsByDate[ev.date].finals.push(ev);
+      });
+
+      months.forEach(mInfo => {
+        const monthCard = document.createElement('div');
+        monthCard.className = 'month-card';
+
+        const firstDay = new Date(mInfo.year, mInfo.month, 1).getDay();
+        const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+        const daysInMonth = new Date(mInfo.year, mInfo.month + 1, 0).getDate();
+
+        let daysHtml = '';
+        daysOfWeek.forEach(d => { daysHtml += `<div class="day-header">${d}</div>`; });
+
+        for (let i = 0; i < startOffset; i++) { daysHtml += `<div class="day-cell empty"></div>`; }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dateStr = `${mInfo.year}-${String(mInfo.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dayEvents = eventsByDate[dateStr];
+          
+          let finalsHtml = '';
+          let reviewsHtml = '';
+
+          if (dayEvents) {
+            dayEvents.finals.forEach(ev => {
+              finalsHtml += `<span class="dot final" style="background-color: ${ev.color}" data-activity="${ev.activity}" onclick="selectActivityByName('${ev.activity}', event)" title="Entrega Final: ${ev.activity}"></span>`;
+            });
+            dayEvents.reviews.forEach(ev => {
+              reviewsHtml += `<span class="dot review" style="border-color: ${ev.color}" data-index="${ev.index}" data-activity="${ev.activity}" onclick="selectActivityByIndex(${ev.index}, event)" title="Repaso: ${ev.activity}"></span>`;
+            });
+          }
+
+          daysHtml += `
+            <div class="day-cell">
+              <span>${day}</span>
+              <div class="dots-container">
+                <div class="dots-row-final">${finalsHtml}</div>
+                <div class="dots-row-review">${reviewsHtml}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        monthCard.innerHTML = `<div class="month-title">${mInfo.name}</div><div class="days-grid">${daysHtml}</div>`;
+        container.appendChild(monthCard);
+      });
+    }
+
+    function renderStudyPlan(isInitialLoad = true) {
+      const tbody = document.getElementById('study-table-body');
+      
+      const subjectSelect = document.getElementById('subject-filter');
+      const sortSelect = document.getElementById('sort-filter');
+
+      if (isInitialLoad && subjectSelect.options.length === 1) {
+        Object.keys(subjects).forEach(key => {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = subjects[key].name;
+          subjectSelect.appendChild(opt);
+        });
+        subjectSelect.addEventListener('change', () => renderStudyPlan(false));
+        sortSelect.addEventListener('change', () => renderStudyPlan(false));
+      }
+
+      const filterVal = subjectSelect.value;
+      const sortVal = sortSelect.value;
+      
+      tbody.innerHTML = '';
+      
+      // Crear lista indexada para poder rastrear el índice original
+      let indexed = studyPlan.map((p, i) => ({ ...p, _idx: i }));
+      
+      // Filtrar por tab
+      if (currentTab === 'pending') {
+        indexed = indexed.filter(p => !completedTasks.includes(p._idx));
+      } else {
+        indexed = indexed.filter(p => completedTasks.includes(p._idx));
+      }
+      
+      // Filtrar por asignatura
+      if (filterVal !== 'all') indexed = indexed.filter(p => p.subject === filterVal);
+      
+      // Ordenar
+      if (sortVal === 'nearest') indexed.sort((a, b) => new Date(a.reviewDate) - new Date(b.reviewDate));
+      else if (sortVal === 'furthest') indexed.sort((a, b) => new Date(b.reviewDate) - new Date(a.reviewDate));
+      else if (sortVal === 'alphabetical') indexed.sort((a, b) => a.activity.localeCompare(b.activity));
+
+      drawTableRows(indexed, tbody);
+      updateTabCounts();
+    }
+
+    function drawTableRows(filteredItems, tbody) {
+      filteredItems.forEach(plan => {
+        const delivery = formatDateTime(plan.deliveryDate);
+        const reviewStart = formatDateTime(plan.reviewDate);
+        const reviewEndStr = new Date(plan.reviewEnd).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+        const idx = plan._idx !== undefined ? plan._idx : studyPlan.indexOf(plan);
+        const isDone = completedTasks.includes(idx);
+
+        const tr = document.createElement('tr');
+        if (isDone) tr.className = 'done-row';
+        tr.innerHTML = `
+          <td>
+            <div class="task-check ${isDone ? 'checked' : ''}" onclick="toggleComplete(${idx}, event)"></div>
+          </td>
+          <td>
+            <div class="activity-cell">
+              <span class="activity-color" style="background-color: ${getSubjectColor(plan.subject)}"></span>
+              <div style="display:flex; flex-direction:column;">
+                <span style="font-weight: 600;">${plan.activity}</span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">${subjects[plan.subject].name}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="date-text">${delivery.date}</span>
+            <span class="date-time">${delivery.time}</span>
+            <span class="badge ${isDone ? 'hecho' : 'entrega'}">${isDone ? '✓ Hecho' : 'Evento Final'}</span>
+          </td>
+          <td>
+            <span class="date-text">${reviewStart.date}</span>
+            <span class="date-time">${reviewStart.time} – ${reviewEndStr}</span>
+            <span class="badge repaso">Repaso Programado</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderTimetable(filterSubject = null, activePlans = []) {
+      const grid = document.getElementById('timetable-grid');
+      grid.innerHTML = ''; 
+      
+      const startHour = 5;
+      const endHour = 24;
+      const totalHours = endHour - startHour;
+      const rowsPerHour = 4; // 15-min intervals
+      grid.style.gridTemplateRows = `auto repeat(${totalHours * rowsPerHour}, minmax(14px, 1fr))`;
+
+      const days = ['Hora', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      const dayColumnMap = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 0: 8 };
+
+      days.forEach((day, index) => {
+        const header = document.createElement('div');
+        header.className = 'tt-header';
+        header.textContent = day;
+        header.style.gridColumn = index + 1;
+        header.style.gridRow = 1;
+        grid.appendChild(header);
+      });
+
+      for (let h = startHour; h <= endHour; h++) {
+        const rowStart = 2 + (h - startHour) * rowsPerHour;
+        if (h < endHour) {
+          const timeLabel = document.createElement('div');
+          timeLabel.className = 'tt-time-label';
+          const formattedHour = new Date(2020, 1, 1, h, 0).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+          timeLabel.textContent = formattedHour;
+          timeLabel.style.gridColumn = 1;
+          timeLabel.style.gridRow = rowStart;
+          grid.appendChild(timeLabel);
+
+          const line = document.createElement('div');
+          line.className = 'tt-grid-line';
+          line.style.gridRow = rowStart;
+          grid.appendChild(line);
+        }
+      }
+
+      const timeToRow = (timeStr) => {
+        const [hh, mm] = timeStr.split(':').map(Number);
+        const hourDiff = hh - startHour;
+        return 2 + (hourDiff * rowsPerHour) + Math.floor(mm / 15);
+      };
+
+      let deliveryDay = null;
+      let deliveryDateText = null;
+      if (activePlans.length > 0 && activePlans[0].deliveryDate) {
+        const dDate = new Date(activePlans[0].deliveryDate);
+        deliveryDay = dDate.getDay();
+        deliveryDateText = dDate.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }).replace('.', '');
+      }
+      const activeReviewDays = activePlans.map(p => new Date(p.reviewDate).getDay());
+
+      let renderSchedule = [...schedule];
+
+      // Inyectar dinámicamente los bloques de repaso para la actividad seleccionada
+      activePlans.forEach(plan => {
+        if (!plan.reviewDate || !plan.reviewEnd) return;
+        const startStr = plan.reviewDate.split('T')[1].substring(0,5);
+        const endStr = plan.reviewEnd.split('T')[1].substring(0,5);
+        const reviewObj = new Date(plan.reviewDate);
+        const dDay = reviewObj.getDay();
+        const shortDate = reviewObj.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }).replace('.', '');
+        
+        renderSchedule.push({
+          day: dDay,
+          start: startStr,
+          end: endStr,
+          title: plan.activity,
+          subtitle: 'Repaso Programado',
+          dateText: shortDate,
+          color: getSubjectColor(plan.subject),
+          type: 'specific-review',
+          subKey: plan.subject
+        });
+      });
+
+      // Inyectar bloque temporal del EVENTO FINAL si no hay clase ese día
+      if (activePlans.length > 0 && deliveryDay !== null) {
+        const hasClassThatDay = schedule.some(b => b.subKey === filterSubject && b.day === deliveryDay);
+        if (!hasClassThatDay) {
+          const dDate = new Date(activePlans[0].deliveryDate);
+          const deliveryTimeStr = activePlans[0].deliveryDate.split('T')[1].substring(0,5);
+          const [dh] = deliveryTimeStr.split(':').map(Number);
+          const blockStart = `${String(Math.max(dh - 1, 5)).padStart(2,'0')}:00`;
+          const blockEnd = `${String(Math.min(dh + 1, 23)).padStart(2,'0')}:00`;
+          const baseActivity = activePlans[0].activity.split('(')[0].trim();
+
+          renderSchedule.push({
+            day: deliveryDay,
+            start: blockStart,
+            end: blockEnd,
+            title: '🎯 ' + baseActivity,
+            subtitle: 'Evento Final',
+            dateText: deliveryDateText,
+            color: getSubjectColor(activePlans[0].subject),
+            type: 'delivery-event',
+            subKey: filterSubject
+          });
+        }
+      }
+
+      renderSchedule.forEach(block => {
+        const el = document.createElement('div');
+        el.className = 'tt-block';
+        
+        const bgColor = block.color;
+        el.style.backgroundColor = `${bgColor}4D`; 
+        el.style.borderLeft = `5px solid ${bgColor}`;
+        
+        let currentBlockDateText = block.dateText;
+        
+        // FILTRADO DINÁMICO
+        if (filterSubject) {
+           if (block.type === 'delivery-event') {
+             // Bloque temporal del evento final inyectado
+             currentBlockDateText = block.dateText;
+             el.style.backgroundColor = `${bgColor}E6`;
+             el.style.boxShadow = `0 0 25px ${bgColor}, 0 0 10px white`;
+             el.style.zIndex = '25';
+             el.style.transform = 'scale(1.05)';
+             el.style.opacity = '1';
+             el.style.border = `2px solid white`;
+             el.style.filter = 'grayscale(0)';
+           } else if (block.type === 'specific-review') {
+             // El bloque de repaso (Intensidad media, subordinado al evento principal)
+             el.style.boxShadow = `0 0 10px ${bgColor}80`; // Sombra más suave
+             el.style.zIndex = '18';
+             el.style.transform = 'scale(1.01)';
+             el.style.backgroundColor = `${bgColor}80`; // Opacidad del 50% (menos brillante)
+             el.style.color = '#ffffff';
+             el.style.borderLeft = `4px solid ${bgColor}`; // Borde del color original, no blanco
+             el.style.opacity = '0.95';
+             el.style.filter = 'grayscale(0)';
+           } else if (block.subKey === filterSubject) {
+             // Clases de la materia
+             if (block.day === deliveryDay) {
+               // DÍA DEL EVENTO - Máxima nitidez (El más brillante de todos)
+               currentBlockDateText = deliveryDateText; // Inyectamos la fecha aquí
+               el.style.backgroundColor = `${bgColor}E6`; // Opacidad del 90% para hacerlo sólido y resaltante
+               el.style.boxShadow = `0 0 25px ${bgColor}, 0 0 10px white`;
+               el.style.zIndex = '25';
+               el.style.transform = 'scale(1.05)';
+               el.style.opacity = '1';
+               el.style.border = `2px solid white`;
+             } else {
+               // Otros días - Totalmente apagados (no relevantes para el examen/entrega)
+               el.style.opacity = '0.15';
+               el.style.filter = 'grayscale(1)';
+               el.style.boxShadow = 'none';
+               el.style.transform = 'none';
+               el.style.zIndex = '1';
+             }
+           } else if (block.type === 'review') {
+             // Bloque genérico de repaso
+             if (activeReviewDays.includes(block.day)) {
+               // Suavizamos el fondo morado para que el bloque específico resalte encima
+               el.style.opacity = '0.35';
+               el.style.filter = 'grayscale(0.5)';
+               el.style.zIndex = '5';
+             } else {
+               el.style.opacity = '0.15';
+               el.style.filter = 'grayscale(1)';
+             }
+           } else if (block.type === 'class') {
+             el.style.opacity = '0.15';
+             el.style.filter = 'grayscale(1)';
+           } else {
+             // Work and Commute are just dimmed slightly
+             el.style.opacity = '0.3';
+             el.style.filter = 'grayscale(0.8)';
+           }
+        }
+
+        const colStart = dayColumnMap[block.day];
+        const rowStart = timeToRow(block.start);
+        const rowEnd = timeToRow(block.end);
+        
+        el.style.gridColumn = colStart;
+        el.style.gridRow = `${rowStart} / ${rowEnd}`;
+
+        const isSpecific = block.type === 'specific-review';
+        el.innerHTML = `
+          <div class="tt-block-title" style="color: ${isSpecific ? '#fff' : bgColor}">${block.title}</div>
+          ${block.subtitle ? `<div class="tt-block-subtitle" style="color: #fff">${block.subtitle}</div>` : ''}
+          ${currentBlockDateText ? `<div style="font-size: 0.75rem; color: #cbd5e1; font-weight: 600; margin-top: auto; padding-top: 0.4rem; font-style: italic;">en el día ${currentBlockDateText}</div>` : ''}
+          <div class="tt-block-time" style="${currentBlockDateText ? 'margin-top: 0; padding-top: 0.1rem;' : ''}">${block.start} - ${block.end}</div>
+        `;
+
+        grid.appendChild(el);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCustomTasks();
+      initWidgets();
+      renderLegend();
+      renderCalendar();
+      renderStudyPlan(true);
+      renderTimetable();
+    });
+  </script>
+</body>
+</html>
