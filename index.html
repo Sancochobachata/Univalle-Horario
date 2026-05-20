@@ -765,6 +765,8 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
       const dateStr = data.dateFormatted || '';
       const timeStr = data.timeFormatted || '';
 
+      let btnHtml = '<button class="popover-btn" id="popover-action-btn">👀 Ver actividades</button>';
+
       pop.innerHTML = `
         <div class="popover-bar" style="background: ${color}"></div>
         <button class="popover-close" onclick="closePopover(event)">✕</button>
@@ -778,9 +780,17 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
           <div class="popover-detail"><span>📅</span> <span>${dateStr}</span></div>
           ${timeStr ? `<div class="popover-detail"><span>🕒</span> <span>${timeStr}</span></div>` : ''}
           ${place ? `<div class="popover-detail"><span>📍</span> <span>${place}</span></div>` : ''}
-          <button class="popover-btn" onclick="popoverGoToActivities(event, '${data.filterType}', ${JSON.stringify(data.filterValue).replace(/'/g,"\\'")})" >👀 Ver actividades</button>
+          ${btnHtml}
         </div>
       `;
+
+      // Attach event listener safely using JS instead of inline HTML
+      const actionBtn = document.getElementById('popover-action-btn');
+      if (actionBtn) {
+        actionBtn.onclick = function(e) {
+          popoverGoToActivities(e, data.filterType, data.filterValue);
+        };
+      }
 
       pop.classList.add('active');
     };
