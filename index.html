@@ -213,6 +213,35 @@ tbody tr:hover { background: rgba(255,255,255,0.08); }
 tr.done-row td { opacity: 0.4; text-decoration: line-through; }
 .badge.hecho { background: rgba(74,222,128,0.2); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
 
+/* Popover */
+.popover { position: absolute; z-index: 3000; width: 280px; background: linear-gradient(135deg, #1e293b, #1e1b4b); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); backdrop-filter: blur(20px); overflow: hidden; animation: popIn 0.25s ease-out; display: none; }
+.popover.active { display: block; }
+@keyframes popIn { from { opacity:0; transform: scale(0.9) translateY(8px); } to { opacity:1; transform: scale(1) translateY(0); } }
+.popover-bar { height: 5px; width: 100%; }
+.popover-body { padding: 1rem 1.2rem; }
+.popover-close { position: absolute; top: 8px; right: 10px; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer; z-index: 5; line-height: 1; padding: 4px; }
+.popover-close:hover { color: #ef4444; }
+.popover-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.7rem; }
+.popover-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.popover-subject { font-family: 'Outfit'; font-size: 0.9rem; font-weight: 700; color: #fff; }
+.popover-type-badge { display: inline-flex; align-items: center; gap: 4px; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; margin-bottom: 0.5rem; }
+.popover-title { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0.6rem; line-height: 1.3; }
+.popover-detail { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; }
+.popover-detail span:first-child { font-size: 0.9rem; }
+.popover-btn { display: block; width: 100%; padding: 0.6rem; margin-top: 0.8rem; background: linear-gradient(135deg, var(--accent), #6d28d9); color: #fff; border: none; border-radius: 10px; font-family: 'Inter'; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-align: center; transition: transform 0.2s, box-shadow 0.2s; }
+.popover-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 12px rgba(139,92,246,0.5); }
+
+/* Touch target expansion for mobile */
+@media (max-width: 768px) {
+  .dot { position: relative; }
+  .dot::after { content: ''; position: absolute; top: -12px; bottom: -12px; left: -12px; right: -12px; }
+}
+
+/* Back to calendar FAB */
+.fab-back { position: fixed; bottom: 2rem; left: 2rem; width: 48px; height: 48px; border-radius: 50%; background: rgba(30,41,59,0.9); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); color: #fff; font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 1000; display: none; align-items: center; justify-content: center; transition: transform 0.3s, opacity 0.3s; animation: fadeIn 0.3s; }
+.fab-back.visible { display: flex; }
+.fab-back:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+
 /* ========== RESPONSIVE MOBILE ========== */
 @media (max-width: 768px) {
   body { padding: 0.8rem; font-size: 0.9rem; }
@@ -276,7 +305,9 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
   
   /* FAB */
   .fab { width: 52px; height: 52px; font-size: 1.6rem; bottom: 1.2rem; right: 1.2rem; }
-  
+  .fab-back { bottom: 1.2rem; left: 1.2rem; width: 44px; height: 44px; }
+  .popover { position: fixed !important; top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; border-radius: 20px 20px 0 0; max-height: 60vh; animation: slideUpMobile 0.3s ease-out; }
+  @keyframes slideUpMobile { from { transform: translateY(100%); } to { transform: translateY(0); } }
   /* Modal */
   .modal-box { padding: 1.5rem; width: 95%; }
   .modal-title { font-size: 1.2rem; }
@@ -338,6 +369,12 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
 
   <!-- FAB -->
   <button class="fab" onclick="openModal()" title="Agregar actividad">+</button>
+
+  <!-- POPOVER -->
+  <div class="popover" id="dot-popover"></div>
+
+  <!-- BACK TO CALENDAR FAB -->
+  <button class="fab-back" id="fab-back" onclick="backToCalendar()" title="Volver al calendario">⬆</button>
 
   <div class="dashboard-container">
     <header class="header-glass">
@@ -451,6 +488,8 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
     // ==========================================
     const colors = { ingles: '#F472B6', matematicas: '#FB923C', ciencias: '#4ADE80', expTeoria: '#38BDF8', expLab: '#60A5FA', taller: '#818CF8', estadistica: '#C084FC', trabajo: '#94A3B8', transporte: '#FCD34D', repaso: '#A78BFA', libre: '#334155' };
     const subjects = { ingles: { name: 'Inglés con Fines Generales I', color: colors.ingles }, matematicas: { name: 'Matemática Fundamental', color: colors.matematicas }, ciencias: { name: 'Ciencias Naturales', color: colors.ciencias }, expTeoria: { name: 'Exp. Científica (Teoría)', color: colors.expTeoria }, expLab: { name: 'Exp. Científica (Lab)', color: colors.expLab }, estadistica: { name: 'Estadística', color: colors.estadistica }, taller: { name: 'Taller ICN', color: colors.taller } };
+    const subjectIcons = { ingles: '🌍', matematicas: '📐', ciencias: '🔬', expTeoria: '📖', expLab: '🧪', estadistica: '📊', taller: '🛠️' };
+    const subjectPlaces = { ingles: 'E26 - 1015', matematicas: 'E20 - AC1', ciencias: 'E24 - AUD 3', expTeoria: 'E24 - AUD 3', expLab: 'S. Ciencias', estadistica: '', taller: '' };
 
     const schedule = [
       { day: 1, start: '07:00', end: '09:00', title: subjects.ingles.name, subtitle: 'E26 - 1015', color: subjects.ingles.color, type: 'class', subKey: 'ingles' },
@@ -611,17 +650,44 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
       initWidgets();
     };
 
-    window.selectActivityByName = function(baseActivityName, event) {
+    window.selectActivityByName = function(baseActivityName, event, forceFilter = false) {
       if(event) event.stopPropagation();
+      const plans = studyPlan.filter(p => p.activity.split('(')[0].trim() === baseActivityName);
+      if (plans.length === 0) return;
+
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile && !forceFilter) {
+        const plan = plans[0];
+        const df = formatDateTime(plan.deliveryDate);
+        const data = {
+          type: 'final', subject: plan.subject, activity: baseActivityName,
+          dateFormatted: df.date, timeFormatted: df.time, filterType: 'name', filterValue: baseActivityName
+        };
+        showPopover(event ? event.target : null, data, event);
+        return;
+      }
+
       activeFilter = { type: 'name', value: baseActivityName };
-      const plans = studyPlan.filter(p => p.activity.startsWith(baseActivityName));
-      if (plans.length > 0) applyDashboardUpdate(plans, plans[0].subject, baseActivityName);
+      applyDashboardUpdate(plans, plans[0].subject, baseActivityName);
     };
 
-    window.selectActivityByIndex = function(index, event) {
+    window.selectActivityByIndex = function(index, event, forceFilter = false) {
       if(event) event.stopPropagation();
-      activeFilter = { type: 'index', value: index };
       const plan = studyPlan[index];
+
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile && !forceFilter) {
+        const rf = formatDateTime(plan.reviewDate);
+        const endStr = new Date(plan.reviewEnd).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+        const data = {
+          type: 'review', subject: plan.subject, activity: plan.activity,
+          dateFormatted: rf.date, timeFormatted: `${rf.time} – ${endStr}`, filterType: 'index', filterValue: index
+        };
+        showPopover(event ? event.target : null, data, event);
+        return;
+      }
+
+      activeFilter = { type: 'index', value: index };
       const baseActivity = plan.activity.split('(')[0].trim();
       applyDashboardUpdate([plan], plan.subject, plan.activity);
     };
@@ -654,6 +720,7 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
       document.getElementById('table-controls').style.display = 'flex';
       document.getElementById('timetable-title').innerHTML = `🕒 Horario Dinámico — Integración Trabajo y Estudio`;
       document.querySelectorAll('.dot').forEach(d => d.classList.remove('selected-dot'));
+      document.getElementById('fab-back').classList.remove('visible');
       renderStudyPlan(false);
       renderTimetable();
       initWidgets();
@@ -665,6 +732,98 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
       renderTimetable();
       initWidgets();
     }
+
+    // ==========================================
+    // POPOVER SYSTEM
+    // ==========================================
+    window.showPopover = function(dotEl, data, evt) {
+      if (evt) evt.stopPropagation();
+      
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile) {
+        // Comportamiento normal en desktop (anterior)
+        if (data.filterType === 'name') {
+          selectActivityByName(data.filterValue, evt);
+        } else {
+          selectActivityByIndex(data.filterValue, evt);
+        }
+        return; // Bypasseamos el popover
+      }
+
+      const pop = document.getElementById('dot-popover');
+      const color = getSubjectColor(data.subject);
+      const icon = subjectIcons[data.subject] || '📚';
+      const subName = subjects[data.subject]?.name || '';
+      const place = subjectPlaces[data.subject] || '';
+      const isFinal = data.type === 'final';
+      
+      const typeBadgeBg = isFinal ? 'rgba(239,68,68,0.2)' : 'rgba(139,92,246,0.2)';
+      const typeBadgeColor = isFinal ? '#fca5a5' : '#c4b5fd';
+      const typeBadgeBorder = isFinal ? 'rgba(239,68,68,0.4)' : 'rgba(139,92,246,0.4)';
+      const typeLabel = isFinal ? '● Evento Final' : '○ Repaso / Desarrollo';
+      
+      const dateStr = data.dateFormatted || '';
+      const timeStr = data.timeFormatted || '';
+
+      pop.innerHTML = `
+        <div class="popover-bar" style="background: ${color}"></div>
+        <button class="popover-close" onclick="closePopover(event)">✕</button>
+        <div class="popover-body">
+          <div class="popover-header">
+            <div class="popover-icon" style="background:${color}20; color:${color}">${icon}</div>
+            <div class="popover-subject" style="color:${color}">${subName}</div>
+          </div>
+          <div class="popover-type-badge" style="background:${typeBadgeBg}; color:${typeBadgeColor}; border:1px solid ${typeBadgeBorder}">${typeLabel}</div>
+          <div class="popover-title">${data.activity}</div>
+          <div class="popover-detail"><span>📅</span> <span>${dateStr}</span></div>
+          ${timeStr ? `<div class="popover-detail"><span>🕒</span> <span>${timeStr}</span></div>` : ''}
+          ${place ? `<div class="popover-detail"><span>📍</span> <span>${place}</span></div>` : ''}
+          <button class="popover-btn" onclick="popoverGoToActivities(event, '${data.filterType}', ${JSON.stringify(data.filterValue).replace(/'/g,"\\'")})" >👀 Ver actividades</button>
+        </div>
+      `;
+
+      pop.classList.add('active');
+    };
+
+    window.closePopover = function(evt) {
+      if (evt) evt.stopPropagation();
+      document.getElementById('dot-popover').classList.remove('active');
+    };
+
+    window.popoverGoToActivities = function(evt, filterType, filterValue) {
+      if (evt) evt.stopPropagation();
+      closePopover();
+      
+      if (filterType === 'name') {
+        selectActivityByName(filterValue, null, true);
+      } else {
+        selectActivityByIndex(filterValue, null, true);
+      }
+
+      // Show back button
+      document.getElementById('fab-back').classList.add('visible');
+
+      // Auto-scroll to study plan
+      setTimeout(() => {
+        document.getElementById('study-plan-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    };
+
+    window.backToCalendar = function() {
+      clearFilter();
+      document.getElementById('fab-back').classList.remove('visible');
+      setTimeout(() => {
+        document.getElementById('calendar-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    };
+
+    // Close popover on outside click
+    document.addEventListener('click', (e) => {
+      const pop = document.getElementById('dot-popover');
+      if (pop && pop.classList.contains('active') && !pop.contains(e.target) && !e.target.closest('.dot-wrapper')) {
+        pop.classList.remove('active');
+      }
+    });
 
     // ==========================================
     // 2. LÓGICA DE UI Y RENDERING
@@ -760,22 +919,23 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
       const uniqueFinals = {}; 
 
       studyPlan.forEach((plan, idx) => {
-        // Extraer el nombre base (eliminar todo lo que esté entre paréntesis)
         const baseActivity = plan.activity.split('(')[0].trim();
 
-        // EVENTOS FINALES - Filtrados para que no haya bolas repetidas del mismo evento el mismo día
         if (plan.deliveryDate) {
           const d = plan.deliveryDate.split('T')[0];
-          const key = `${d}_${baseActivity}`; // Clave única por día y por EVENTO BASE
+          const key = `${d}_${baseActivity}`;
           if (!uniqueFinals[key]) {
-            uniqueFinals[key] = { date: d, type: 'final', subject: plan.subject, activity: baseActivity, color: getSubjectColor(plan.subject) };
+            const dObj = new Date(plan.deliveryDate);
+            const df = formatDateTime(plan.deliveryDate);
+            uniqueFinals[key] = { date: d, type: 'final', subject: plan.subject, activity: baseActivity, color: getSubjectColor(plan.subject), dateFormatted: df.date, timeFormatted: df.time };
           }
         }
-        // REPASOS / DESARROLLO
         if (plan.reviewDate) {
           const r = plan.reviewDate.split('T')[0];
           if (!eventsByDate[r]) eventsByDate[r] = { finals: [], reviews: [] };
-          eventsByDate[r].reviews.push({ type: 'review', subject: plan.subject, activity: baseActivity, color: getSubjectColor(plan.subject), index: idx });
+          const rf = formatDateTime(plan.reviewDate);
+          const endStr = new Date(plan.reviewEnd).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+          eventsByDate[r].reviews.push({ type: 'review', subject: plan.subject, activity: plan.activity, color: getSubjectColor(plan.subject), index: idx, dateFormatted: rf.date, timeFormatted: `${rf.time} – ${endStr}` });
         }
       });
 
@@ -807,10 +967,10 @@ tr.done-row td { opacity: 0.4; text-decoration: line-through; }
 
           if (dayEvents) {
             dayEvents.finals.forEach(ev => {
-              finalsHtml += `<span class="dot final" style="background-color: ${ev.color}" data-activity="${ev.activity}" onclick="selectActivityByName('${ev.activity}', event)" title="Entrega Final: ${ev.activity}"></span>`;
+              finalsHtml += `<span class="dot final" style="background-color: ${ev.color}" data-activity="${ev.activity}" onclick="selectActivityByName('${ev.activity.replace(/'/g, "\\'")}', event)" title="Entrega Final: ${ev.activity}"></span>`;
             });
             dayEvents.reviews.forEach(ev => {
-              reviewsHtml += `<span class="dot review" style="border-color: ${ev.color}" data-index="${ev.index}" data-activity="${ev.activity}" onclick="selectActivityByIndex(${ev.index}, event)" title="Repaso: ${ev.activity}"></span>`;
+              reviewsHtml += `<span class="dot review" style="border-color: ${ev.color}" data-index="${ev.index}" data-activity="${ev.activity.split('(')[0].trim()}" onclick="selectActivityByIndex(${ev.index}, event)" title="Repaso: ${ev.activity}"></span>`;
             });
           }
 
